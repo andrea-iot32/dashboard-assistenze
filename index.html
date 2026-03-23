@@ -29,8 +29,6 @@
     th { background: #4CAF50; color: white; padding: 10px; }
     td { padding: 8px; border-bottom: 1px solid #eee; }
 
-    input { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ccc; }
-
     canvas { width: 100% !important; }
 
     @media (max-width: 900px) { .container, .kpi-container { flex-direction: column; } }
@@ -43,36 +41,23 @@
 <div class="kpi-container">
   <div class="kpi">
     <h4>Totale</h4>
-    <p id="total"></p>
+    <p id="total">-</p>
   </div>
   <div class="kpi">
     <h4>Mese con più assistenze</h4>
-    <p id="best"></p>
+    <p id="best">-</p>
   </div>
 </div>
 
 <div class="container">
 
   <div class="card table-card">
-    <h3>Dati</h3>
+    <h3>Dati (da Google Sheets)</h3>
     <table id="dataTable">
       <thead>
         <tr><th>Mese</th><th>Assistenze</th></tr>
       </thead>
-      <tbody>
-        <tr><td>Enero</td><td><input type="number"></td></tr>
-        <tr><td>Febrero</td><td><input type="number"></td></tr>
-        <tr><td>Marzo</td><td><input type="number"></td></tr>
-        <tr><td>Abril</td><td><input type="number"></td></tr>
-        <tr><td>Mayo</td><td><input type="number"></td></tr>
-        <tr><td>Junio</td><td><input type="number"></td></tr>
-        <tr><td>Julio</td><td><input type="number"></td></tr>
-        <tr><td>Agosto</td><td><input type="number"></td></tr>
-        <tr><td>Septiembre</td><td><input type="number"></td></tr>
-        <tr><td>Octubre</td><td><input type="number"></td></tr>
-        <tr><td>Noviembre</td><td><input type="number"></td></tr>
-        <tr><td>Diciembre</td><td><input type="number"></td></tr>
-      </tbody>
+      <tbody></tbody>
     </table>
   </div>
 
@@ -86,33 +71,37 @@
 <script>
   let chart;
 
-  function saveData(values) {
-    localStorage.setItem("assistenze", JSON.stringify(values));
-  }
+  async function loadFromGoogleSheets() {
+    const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRUxNyEp91aBpQA-QYqYv0JKcmAMkaAbx6mdP7St4tSVLEqh8UkyB9nXjfSQa28dPUXgyBwUJRBfUjX/pub?output=csv";
 
-  function loadData() {
-    return JSON.parse(localStorage.getItem("assistenze") || "[]");
-  }
+    const response = await fetch(url);
+    const data = await response.text();
 
-  function updateData() {
+    const rows = data.split("\n").slice(1);
+
     const months = [];
     const values = [];
 
-    const rows = document.querySelectorAll("#dataTable tbody tr");
+    const tbody = document.querySelector("#dataTable tbody");
+    tbody.innerHTML = "";
 
-    rows.forEach((row, i) => {
-      const month = row.children[0].innerText;
-      const input = row.children[1].querySelector("input");
-      const value = parseInt(input.value) || 0;
+    rows.forEach(row => {
+      const cols = row.split(",");
 
-      months.push(month);
-      values.push(value);
+      const month = cols[0];
+      const value = parseInt(cols[1]) || 0;
+
+      if (month) {
+        months.push(month);
+        values.push(value);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${month}</td><td>${value}</td>`;
+        tbody.appendChild(tr);
+      }
     });
 
-    saveData(values);
-
     const total = values.reduce((a, b) => a + b, 0);
-
     const maxVal = Math.max(...values);
     const bestMonth = months[values.indexOf(maxVal)] || "-";
 
@@ -129,19 +118,18 @@
         type: 'bar',
         data: {
           labels: months,
-          datasets: [{ data: values, borderRadius: 8 }]
+          datasets: [{
+            data: values,
+            borderRadius: 8
+          }]
         },
         options: {
-          responsive: true,
           plugins: {
             legend: { display: false },
             datalabels: {
               anchor: 'end',
               align: 'top',
-              formatter: function(value) {
-                return value > 0 ? value : '';
-              },
-              font: { weight: 'bold' }
+              formatter: value => value > 0 ? value : ''
             }
           }
         },
@@ -150,18 +138,10 @@
     }
   }
 
-  const saved = loadData();
-  if (saved.length) {
-    document.querySelectorAll("input").forEach((input, i) => {
-      input.value = saved[i] || "";
-    });
-  }
+  loadFromGoogleSheets();
 
-  document.querySelectorAll("input").forEach(input => {
-    input.addEventListener("input", updateData);
-  });
-
-  updateData();
+  // aggiornamento automatico ogni 10 secondi
+  setInterval(loadFromGoogleSheets, 10000);
 </script>
 
 </body>
