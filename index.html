@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Assistenze Tecniche</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fb; color: #333; }
+
+    header { background: linear-gradient(135deg, #4CAF50, #2e7d32); color: white; padding: 20px 40px; font-size: 24px; font-weight: bold; }
+
+    .kpi-container { display: flex; gap: 20px; padding: 20px 40px; flex-wrap: wrap; }
+
+    .kpi { flex: 1; min-width: 200px; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); text-align: center; }
+
+    .kpi h4 { margin: 0; font-size: 14px; color: #777; }
+    .kpi p { margin: 5px 0 0; font-size: 22px; font-weight: bold; }
+
+    .container { display: flex; gap: 30px; padding: 20px 40px; flex-wrap: wrap; }
+
+    .card { background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); padding: 20px; }
+
+    .table-card { flex: 1; min-width: 320px; }
+    .chart-card { flex: 2; min-width: 400px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #4CAF50; color: white; padding: 10px; }
+    td { padding: 8px; border-bottom: 1px solid #eee; }
+
+    input { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ccc; }
+
+    canvas { width: 100% !important; }
+
+    @media (max-width: 900px) { .container, .kpi-container { flex-direction: column; } }
+  </style>
+</head>
+<body>
+
+<header>📊 Dashboard Assistenze Tecniche</header>
+
+<div class="kpi-container">
+  <div class="kpi">
+    <h4>Totale</h4>
+    <p id="total"></p>
+  </div>
+  <div class="kpi">
+    <h4>Mese con più assistenze</h4>
+    <p id="best"></p>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="card table-card">
+    <h3>Dati</h3>
+    <table id="dataTable">
+      <thead>
+        <tr><th>Mese</th><th>Assistenze</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Enero</td><td><input type="number"></td></tr>
+        <tr><td>Febrero</td><td><input type="number"></td></tr>
+        <tr><td>Marzo</td><td><input type="number"></td></tr>
+        <tr><td>Abril</td><td><input type="number"></td></tr>
+        <tr><td>Mayo</td><td><input type="number"></td></tr>
+        <tr><td>Junio</td><td><input type="number"></td></tr>
+        <tr><td>Julio</td><td><input type="number"></td></tr>
+        <tr><td>Agosto</td><td><input type="number"></td></tr>
+        <tr><td>Septiembre</td><td><input type="number"></td></tr>
+        <tr><td>Octubre</td><td><input type="number"></td></tr>
+        <tr><td>Noviembre</td><td><input type="number"></td></tr>
+        <tr><td>Diciembre</td><td><input type="number"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card chart-card">
+    <h3>Grafico</h3>
+    <canvas id="myChart"></canvas>
+  </div>
+
+</div>
+
+<script>
+  let chart;
+
+  function saveData(values) {
+    localStorage.setItem("assistenze", JSON.stringify(values));
+  }
+
+  function loadData() {
+    return JSON.parse(localStorage.getItem("assistenze") || "[]");
+  }
+
+  function updateData() {
+    const months = [];
+    const values = [];
+
+    const rows = document.querySelectorAll("#dataTable tbody tr");
+
+    rows.forEach((row, i) => {
+      const month = row.children[0].innerText;
+      const input = row.children[1].querySelector("input");
+      const value = parseInt(input.value) || 0;
+
+      months.push(month);
+      values.push(value);
+    });
+
+    saveData(values);
+
+    const total = values.reduce((a, b) => a + b, 0);
+
+    const maxVal = Math.max(...values);
+    const bestMonth = months[values.indexOf(maxVal)] || "-";
+
+    document.getElementById("total").innerText = total;
+    document.getElementById("best").innerText = bestMonth + " (" + maxVal + ")";
+
+    if (chart) {
+      chart.data.labels = months;
+      chart.data.datasets[0].data = values;
+      chart.update();
+    } else {
+      const ctx = document.getElementById('myChart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [{ data: values, borderRadius: 8 }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              formatter: function(value) {
+                return value > 0 ? value : '';
+              },
+              font: { weight: 'bold' }
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+  }
+
+  const saved = loadData();
+  if (saved.length) {
+    document.querySelectorAll("input").forEach((input, i) => {
+      input.value = saved[i] || "";
+    });
+  }
+
+  document.querySelectorAll("input").forEach(input => {
+    input.addEventListener("input", updateData);
+  });
+
+  updateData();
+</script>
+
+</body>
+</html>
