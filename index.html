@@ -37,6 +37,7 @@
 <body>
 
 <header>📊 Dashboard Assistenze Tecniche</header>
+<div id="loading" style="padding:10px 40px;color:#555;">⏳ Caricamento dati...</div>
 
 <div class="kpi-container">
   <div class="kpi">
@@ -72,7 +73,8 @@
   let chart;
 
   async function loadFromGoogleSheets() {
-    const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRUxNyEp91aBpQA-QYqYv0JKcmAMkaAbx6mdP7St4tSVLEqh8UkyB9nXjfSQa28dPUXgyBwUJRBfUjX/pub?output=csv";
+    document.getElementById("loading").style.display = "block";
+    const url = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://docs.google.com/spreadsheets/d/e/2PACX-1vRUxNyEp91aBpQA-QYqYv0JKcmAMkaAbx6mdP7St4tSVLEqh8UkyB9nXjfSQa28dPUXgyBwUJRBfUjX/pub?output=csv");
 
     const response = await fetch(url);
     const data = await response.text();
@@ -132,6 +134,34 @@
           }]
         },
         options: {
+          animation: {
+            duration: 800
+          },
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              formatter: value => value > 0 ? value : ''
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+
+    document.getElementById("loading").style.display = "none"; else {
+      const ctx = document.getElementById('myChart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [{
+            data: values,
+            borderRadius: 8
+          }]
+        },
+        options: {
           plugins: {
             legend: { display: false },
             datalabels: {
@@ -147,6 +177,7 @@
   }
 
   loadFromGoogleSheets();
+
 
   // aggiornamento automatico ogni 10 secondi
   setInterval(loadFromGoogleSheets, 10000);
