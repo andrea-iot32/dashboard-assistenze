@@ -74,7 +74,8 @@
 
   async function loadFromGoogleSheets() {
     document.getElementById("loading").style.display = "block";
-    const url = "https://corsproxy.io/?"+ encodeURIComponent("https://docs.google.com/spreadsheets/d/e/2PACX-1vRUxNyEp91aBpQA-QYqYv0JKcmAMkaAbx6mdP7St4tSVLEqh8UkyB9nXjfSQa28dPUXgyBwUJRBfUjX/pub?output=csv");
+    const url = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://docs.google.com/spreadsheets/d/e/2PACX-1vRUxNyEp91aBpQA-QYqYv0JKcmAMkaAbx6mdP7St4tSVLEqh8UkyB9nXjfSQa28dPUXgyBwUJRBfUjX/pub?output=csv");
+
     const response = await fetch(url);
     const data = await response.text();
 
@@ -133,9 +134,7 @@
           }]
         },
         options: {
-          animation: {
-            duration: 800
-          },
+          animation: { duration: 800 },
           plugins: {
             legend: { display: false },
             datalabels: {
