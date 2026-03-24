@@ -86,9 +86,12 @@
     tbody.innerHTML = "";
 
     rows.forEach(row => {
-      const cols = row.split(",");
+      if (!row.trim()) return;
 
-      const month = cols[0];
+      // supporta sia virgola che punto e virgola
+      const cols = row.includes(";") ? row.split(";") : row.split(",");
+
+      const month = cols[0]?.trim();
       const value = parseInt(cols[1]) || 0;
 
       if (month) {
@@ -102,11 +105,16 @@
     });
 
     const total = values.reduce((a, b) => a + b, 0);
-    const maxVal = Math.max(...values);
-    const bestMonth = months[values.indexOf(maxVal)] || "-";
+    let maxVal = 0;
+    let bestMonth = "-";
+
+    if (values.length > 0) {
+      maxVal = Math.max(...values);
+      bestMonth = months[values.indexOf(maxVal)] || "-";
+    }
 
     document.getElementById("total").innerText = total;
-    document.getElementById("best").innerText = bestMonth + " (" + maxVal + ")";
+    document.getElementById("best").innerText = bestMonth !== "-" ? bestMonth + " (" + maxVal + ")" : "-";
 
     if (chart) {
       chart.data.labels = months;
